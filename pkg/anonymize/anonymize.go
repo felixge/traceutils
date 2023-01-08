@@ -10,6 +10,19 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+var stdlibPkgs = func() []string {
+	// Determine stdlib packages
+	pkgs, err := packages.Load(nil, "std")
+	if err != nil {
+		panic(err)
+	}
+	var stdlibPkgs []string
+	for _, pkg := range pkgs {
+		stdlibPkgs = append(stdlibPkgs, pkg.PkgPath)
+	}
+	return stdlibPkgs
+}()
+
 // AnonymizeTrace read a runtime/trace file from r and writes an obfuscated
 // version of it to w. The obfuscation is done by replacing all references to
 // file paths and packages not found Go's standard library with obfuscated
@@ -22,16 +35,6 @@ import (
 // TODO: This function is pretty slow, maybe we can do better? It takes about
 // 6min17s to anonymize a 280MB trace on my machine.
 func AnonymizeTrace(r io.Reader, w io.Writer) error {
-	// Determine stdlib packages
-	pkgs, err := packages.Load(nil, "std")
-	if err != nil {
-		return err
-	}
-	var stdlibPkgs []string
-	for _, pkg := range pkgs {
-		stdlibPkgs = append(stdlibPkgs, pkg.PkgPath)
-	}
-
 	// Initialize encoder and decoder
 	enc := encoding.NewEncoder(w)
 	dec, err := encoding.NewDecoder(r)
