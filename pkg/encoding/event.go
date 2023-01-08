@@ -1,5 +1,6 @@
 package encoding
 
+// Event represents a single event in the trace.
 type Event struct {
 	Type EventType
 	Args []uint64
@@ -8,9 +9,11 @@ type Event struct {
 
 //go:generate stringer -type=EventType
 
+// EventType is the type of an event.
 type EventType byte
 
 // Event types in the trace, args are given in square brackets.
+// This is copied from src/runtime/trace.go in the Go source tree.
 const (
 	EventNone              EventType = 0  // unused
 	EventBatch             EventType = 1  // start of per-P batch of events [pid, timestamp]
