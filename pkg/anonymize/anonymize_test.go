@@ -1,4 +1,4 @@
-package anon
+package anonymize
 
 import (
 	"bytes"

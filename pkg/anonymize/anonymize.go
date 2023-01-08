@@ -1,5 +1,4 @@
-// TODO: Rename to anonymize
-package anon
+package anonymize
 
 import (
 	"bytes"
