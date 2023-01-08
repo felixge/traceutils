@@ -129,3 +129,16 @@ func Test_anonymizeString(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkAnonymizeTrace(b *testing.B) {
+	// Read the test trace.
+	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "trace.bin"))
+	require.NoError(b, err)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		// Anonymize the trace and write it to io.Discard.
+		require.NoError(b, AnonymizeTrace(bytes.NewReader(inTrace), io.Discard))
+	}
+}
