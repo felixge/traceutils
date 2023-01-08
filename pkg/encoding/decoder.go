@@ -9,6 +9,7 @@ import (
 
 type Decoder struct {
 	in   *bufio.Reader
+	br   bytes.Reader
 	args []byte // scratch buf
 }
 
@@ -88,16 +89,16 @@ func (d *Decoder) Decode(e *Event) error {
 		if err != nil {
 			return err
 		}
-		// p.br.Reset(p.args)
-		// for {
-		// 	arg, err := readVal(&p.br)
-		// 	if err == io.EOF {
-		// 		break
-		// 	} else if err != nil {
-		// 		return err
-		// 	}
-		// 	e.Args = append(e.Args, arg)
-		// }
+		d.br.Reset(d.args)
+		for {
+			arg, err := readVal(&d.br)
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				return err
+			}
+			e.Args = append(e.Args, arg)
+		}
 	}
 
 	if e.Type == EventUserLog {
