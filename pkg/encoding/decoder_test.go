@@ -2,7 +2,6 @@ package encoding
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -18,12 +17,14 @@ func TestParser(t *testing.T) {
 	p, err := NewDecoder(bytes.NewReader(data))
 	require.NoError(t, err)
 
+	var count int
 	for {
 		e := Event{}
 		if err := p.Decode(&e); err != nil {
 			require.Equal(t, io.EOF, err)
 			break
 		}
-		fmt.Printf("e: %v\n", e)
+		count++
 	}
+	require.Equal(t, 151, count)
 }
