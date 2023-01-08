@@ -1,6 +1,7 @@
 package encoding
 
 // Event represents a single event in the trace.
+// TODO: This is a raw event. We should add structs for each event type.
 type Event struct {
 	Type EventType
 	Args []uint64

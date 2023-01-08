@@ -25,7 +25,10 @@ func TestAnonymizeTrace(t *testing.T) {
 	dec, err := encoding.NewDecoder(bytes.NewReader(outTrace.Bytes()))
 	require.NoError(t, err)
 
+	// secretStrings contains strings that appear in inTrace, but that should
+	// not appear in the anonymized trace.
 	secretStrings := []string{"/Users/", "/felix.geisendoerfer/"}
+	// Decode each event and check that it does not contain any secret strings.
 	for {
 		var ev encoding.Event
 		if err := dec.Decode(&ev); err != nil {
@@ -33,13 +36,15 @@ func TestAnonymizeTrace(t *testing.T) {
 			break
 		}
 
-		if ev.Type == encoding.EventString {
-			// Check that the string does not contain any secret strings.
-			for _, s := range secretStrings {
-				require.NotContains(t, string(ev.Str), s)
-			}
+		// Check that the string does not contain any secret strings.
+		for _, s := range secretStrings {
+			require.NotContains(t, string(ev.Str), s)
 		}
 	}
+
+	// TODO: The test trace doesn't contain any EventUserLog events.
+	// We should add some code that generates a trace with EventUserLog events and include
+	// it in the testdata directory and then use this trace here.
 }
 
 // Test_anonymizeString tests the anonymizeString function.

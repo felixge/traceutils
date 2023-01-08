@@ -45,10 +45,8 @@ func AnonymizeTrace(r io.Reader, w io.Writer) error {
 			return err
 		}
 
-		if ev.Type == encoding.EventString {
-			anonymizeString(ev.Str, stdlibPkgs)
-		}
-		// TODO: Handle encoding.EventUserLog
+		anonymizeString(ev.Str, stdlibPkgs)
+
 		if err := enc.Encode(&ev); err != nil {
 			return err
 		}
