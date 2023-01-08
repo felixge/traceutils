@@ -18,7 +18,7 @@ Example output:
 
 ![screenshot of go tool trace showing an anonymized trace](./images/anonymize.png)
 
-Note: This is currently kind of slow, a 280MB trace takes > 6min to anonymize on my machine.
+Note: This is currently kind of slow, a 280MB trace takes > 6min to anonymize on my machine (~0.75 MB/s).
 
 # License
 
