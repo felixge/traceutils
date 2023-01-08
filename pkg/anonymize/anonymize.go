@@ -112,8 +112,11 @@ func anonymizeString(s []byte, packages []string) {
 		prefix []byte
 		suffix []byte
 	}
+
+	var sep []byte
 	for _, pkg := range packages {
-		sep := append([]byte("src/"), []byte(pkg)...)
+		sep = append(sep[:0], []byte("src/")...)
+		sep = append(sep, []byte(pkg)...)
 		prefix, suffix, found := bytes.Cut(s, sep)
 		if found && len(pkg) > longest.length && len(suffix) > 1 && !bytes.Contains(suffix[1:], []byte("/")) {
 			longest.length = len(pkg)
