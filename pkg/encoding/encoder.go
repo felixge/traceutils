@@ -10,13 +10,14 @@ import (
 type Encoder struct {
 	w             io.Writer    // output writer
 	err           error        // sticky error
-	buf           bytes.Buffer // scratch buf
+	buf           bytes.Buffer // scratch buf for encoding non-inlined args
+	scratch10     []byte       // scratch buf for encoding varints
 	headerWritten bool         // true if header has been written
 }
 
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{w: w}
+	return &Encoder{w: w, scratch10: make([]byte, 10)}
 }
 
 // Encode writes ev to the encoder's writer or returns an error.
@@ -46,11 +47,11 @@ func (e *Encoder) Encode(ev *Event) error {
 	// Write string event
 	if ev.Type == EventString {
 		// Write string id
-		if e.err = writeVarint(e.w, ev.Args[0]); e.err != nil {
+		if e.err = writeVarint(e.w, ev.Args[0], e.scratch10); e.err != nil {
 			return e.err
 		}
 		// Write string length
-		if e.err = writeVarint(e.w, uint64(len(ev.Str))); e.err != nil {
+		if e.err = writeVarint(e.w, uint64(len(ev.Str)), e.scratch10); e.err != nil {
 			return e.err
 		}
 		// Write string
@@ -61,7 +62,7 @@ func (e *Encoder) Encode(ev *Event) error {
 	} else if narg < 3 {
 		// Write inlined arguments
 		for _, arg := range ev.Args {
-			if e.err = writeVarint(e.w, arg); e.err != nil {
+			if e.err = writeVarint(e.w, arg, e.scratch10); e.err != nil {
 				return e.err
 			}
 		}
@@ -69,7 +70,7 @@ func (e *Encoder) Encode(ev *Event) error {
 		// Write the arguments to e.buf to determine their encoded length
 		e.buf.Reset()
 		for _, arg := range ev.Args {
-			if e.err = writeVarint(&e.buf, arg); e.err != nil {
+			if e.err = writeVarint(&e.buf, arg, e.scratch10); e.err != nil {
 				return e.err
 			}
 		}
@@ -81,7 +82,7 @@ func (e *Encoder) Encode(ev *Event) error {
 			}
 		} else {
 			// Write the length of the encoded arguments to the e.w
-			if e.err = writeVarint(e.w, uint64(e.buf.Len())); e.err != nil {
+			if e.err = writeVarint(e.w, uint64(e.buf.Len()), e.scratch10); e.err != nil {
 				return e.err
 			}
 		}
@@ -94,7 +95,7 @@ func (e *Encoder) Encode(ev *Event) error {
 	// Write user log event
 	if ev.Type == EventUserLog {
 		// Write string length
-		if e.err = writeVarint(e.w, uint64(len(ev.Str))); e.err != nil {
+		if e.err = writeVarint(e.w, uint64(len(ev.Str)), e.scratch10); e.err != nil {
 			return e.err
 		}
 		// Write string
@@ -107,10 +108,10 @@ func (e *Encoder) Encode(ev *Event) error {
 }
 
 // writeVarint writes v as a varint to w or returns an error.
-func writeVarint(w io.Writer, v uint64) error {
-	var buf [10]byte
-	n := binary.PutUvarint(buf[:], v)
-	_, err := w.Write(buf[:n])
+// scratch is a 10 byte buffer used to avoid allocations.
+func writeVarint(w io.Writer, v uint64, scratch []byte) error {
+	n := binary.PutUvarint(scratch, v)
+	_, err := w.Write(scratch[:n])
 	return err
 }
 
