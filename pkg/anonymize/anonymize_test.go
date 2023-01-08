@@ -66,7 +66,10 @@ func TestAnonymizeTrace(t *testing.T) {
 
 // Test_anonymizeString tests the anonymizeString function.
 func Test_anonymizeString(t *testing.T) {
-	allowed := []string{"runtime", "encoding/json"}
+	allowed := [][]byte{
+		[]byte("runtime"),
+		[]byte("encoding/json"),
+	}
 	tests := []struct {
 		name string
 		s    []byte

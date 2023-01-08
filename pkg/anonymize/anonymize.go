@@ -10,15 +10,15 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-var stdlibPkgs = func() []string {
+var stdlibPkgs = func() [][]byte {
 	// Determine stdlib packages
 	pkgs, err := packages.Load(nil, "std")
 	if err != nil {
 		panic(err)
 	}
-	var stdlibPkgs []string
+	var stdlibPkgs [][]byte
 	for _, pkg := range pkgs {
-		stdlibPkgs = append(stdlibPkgs, pkg.PkgPath)
+		stdlibPkgs = append(stdlibPkgs, []byte(pkg.PkgPath))
 	}
 	return stdlibPkgs
 }()
@@ -80,7 +80,7 @@ var gcMarkWorkerModeStrings = map[string]bool{
 // any ".go" suffix of s intact. For file paths ending in a valid package name,
 // only the prefix of the path is obfuscated. For example:
 // TODO: This function is kind of slow, maybe we can do better?
-func anonymizeString(s []byte, packages []string) {
+func anonymizeString(s []byte, packages [][]byte) {
 	if len(s) == 0 {
 		return
 	}
