@@ -18,6 +18,9 @@ import (
 // suffixes intact. For file paths ending in a stdlib package name, only the
 // prefix of the path is obfuscated. On success AnonymizeTrace returns nil. If
 // an error occurs, AnonymizeTrace returns the error.
+//
+// TODO: This function is pretty slow, maybe we can do better? It takes about
+// 6min17s to anonymize a 280MB trace on my machine.
 func AnonymizeTrace(r io.Reader, w io.Writer) error {
 	// Determine stdlib packages
 	pkgs, err := packages.Load(nil, "std")
@@ -37,16 +40,21 @@ func AnonymizeTrace(r io.Reader, w io.Writer) error {
 	}
 	// Obfuscate all string events
 	for {
+		// Decode event
 		var ev encoding.Event
 		if err := dec.Decode(&ev); err != nil {
 			if err == io.EOF {
+				// We're done
 				return nil
 			}
 			return err
 		}
 
+		// Obfuscate string
+		// TODO: Doing this concurrently might be nice for bigger trace.
 		anonymizeString(ev.Str, stdlibPkgs)
 
+		// Encode the obfuscated event
 		if err := enc.Encode(&ev); err != nil {
 			return err
 		}
@@ -58,6 +66,7 @@ func AnonymizeTrace(r io.Reader, w io.Writer) error {
 // and lower case letters with "X" and "x" respectively. Additionally it keeps
 // any ".go" suffix of s intact. For file paths ending in a valid package name,
 // only the prefix of the path is obfuscated. For example:
+// TODO: This function is kind of slow, maybe we can do better?
 func anonymizeString(s []byte, packages []string) {
 	if len(s) == 0 {
 		return
