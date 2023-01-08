@@ -10,19 +10,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-var stdlibPkgs = func() [][]byte {
-	// Determine stdlib packages
-	pkgs, err := packages.Load(nil, "std")
-	if err != nil {
-		panic(err)
-	}
-	var stdlibPkgs [][]byte
-	for _, pkg := range pkgs {
-		stdlibPkgs = append(stdlibPkgs, []byte(pkg.PkgPath))
-	}
-	return stdlibPkgs
-}()
-
 // AnonymizeTrace read a runtime/trace file from r and writes an obfuscated
 // version of it to w. The obfuscation is done by replacing all references to
 // file paths and packages not found Go's standard library with obfuscated
@@ -55,7 +42,7 @@ func AnonymizeTrace(r io.Reader, w io.Writer) error {
 
 		// Obfuscate string
 		// TODO: Doing this concurrently might be nice for bigger trace.
-		anonymizeString(ev.Str, stdlibPkgs)
+		anonymizeString(ev.Str)
 
 		// Encode the obfuscated event
 		if err := enc.Encode(&ev); err != nil {
@@ -80,7 +67,7 @@ var gcMarkWorkerModeStrings = map[string]bool{
 // any ".go" suffix of s intact. For file paths ending in a valid package name,
 // only the prefix of the path is obfuscated. For example:
 // TODO: This function is kind of slow, maybe we can do better?
-func anonymizeString(s []byte, packages [][]byte) {
+func anonymizeString(s []byte) {
 	if len(s) == 0 {
 		return
 	}
@@ -97,7 +84,7 @@ func anonymizeString(s []byte, packages [][]byte) {
 			obfuscate(s)
 			return
 		}
-		for _, stdlibPkg := range packages {
+		for _, stdlibPkg := range stdlibPkgs {
 			if bytes.Equal(pkg, []byte(stdlibPkg)) {
 				return
 			}
@@ -113,13 +100,10 @@ func anonymizeString(s []byte, packages [][]byte) {
 		suffix []byte
 	}
 
-	var sep []byte
-	for _, pkg := range packages {
-		sep = append(sep[:0], []byte("src/")...)
-		sep = append(sep, []byte(pkg)...)
-		prefix, suffix, found := bytes.Cut(s, sep)
-		if found && len(pkg) > longest.length && len(suffix) > 1 && !bytes.Contains(suffix[1:], []byte("/")) {
-			longest.length = len(pkg)
+	for _, stdPath := range stdlibPaths {
+		prefix, suffix, found := bytes.Cut(s, stdPath)
+		if found && len(stdPath) > longest.length && len(suffix) > 1 && !bytes.Contains(suffix[1:], []byte("/")) {
+			longest.length = len(stdPath)
 			longest.prefix = prefix
 			longest.suffix = suffix
 		}
@@ -156,3 +140,24 @@ func obfuscate(b []byte) {
 		i += size
 	}
 }
+
+var stdlibPkgs = func() [][]byte {
+	// Determine stdlib packages
+	pkgs, err := packages.Load(nil, "std")
+	if err != nil {
+		panic(err)
+	}
+	var stdlibPkgs [][]byte
+	for _, pkg := range pkgs {
+		stdlibPkgs = append(stdlibPkgs, []byte(pkg.PkgPath))
+	}
+	return stdlibPkgs
+}()
+
+var stdlibPaths = func() [][]byte {
+	var paths [][]byte
+	for _, pkg := range stdlibPkgs {
+		paths = append(paths, append([]byte("src/"), pkg...))
+	}
+	return paths
+}()

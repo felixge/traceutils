@@ -66,10 +66,6 @@ func TestAnonymizeTrace(t *testing.T) {
 
 // Test_anonymizeString tests the anonymizeString function.
 func Test_anonymizeString(t *testing.T) {
-	allowed := [][]byte{
-		[]byte("runtime"),
-		[]byte("encoding/json"),
-	}
 	tests := []struct {
 		name string
 		s    []byte
@@ -125,7 +121,7 @@ func Test_anonymizeString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			anonymizeString(tt.s, allowed)
+			anonymizeString(tt.s)
 			if got := string(tt.s); got != tt.want {
 				t.Errorf("got=%q want=%q", got, tt.want)
 			}
