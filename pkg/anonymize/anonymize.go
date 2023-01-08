@@ -42,9 +42,9 @@ func AnonymizeTrace(r io.Reader, w io.Writer) error {
 		return err
 	}
 	// Obfuscate all string events
+	var ev encoding.Event
 	for {
 		// Decode event
-		var ev encoding.Event
 		if err := dec.Decode(&ev); err != nil {
 			if err == io.EOF {
 				// We're done
