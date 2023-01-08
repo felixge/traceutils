@@ -61,6 +61,16 @@ func AnonymizeTrace(r io.Reader, w io.Writer) error {
 	}
 }
 
+// gcMarkWorkerModeStrings is a map of strings emitted at the start of a
+// runtime/trace that we don't want to obfuscate. This is copied from
+// runtime/trace.go in the Go source tree.
+var gcMarkWorkerModeStrings = map[string]bool{
+	"Not worker":      true,
+	"GC (dedicated)":  true,
+	"GC (fractional)": true,
+	"GC (idle)":       true,
+}
+
 // anonymizeString takes an argument s that is expected to contain a pkg.func or
 // a file path and obfuscates it. The obfuscation is done by replacing all upper
 // and lower case letters with "X" and "x" respectively. Additionally it keeps
@@ -69,6 +79,11 @@ func AnonymizeTrace(r io.Reader, w io.Writer) error {
 // TODO: This function is kind of slow, maybe we can do better?
 func anonymizeString(s []byte, packages []string) {
 	if len(s) == 0 {
+		return
+	}
+
+	// Don't obfuscate the gcMarkWorkerModeStrings found in every trace
+	if _, ok := gcMarkWorkerModeStrings[string(s)]; ok {
 		return
 	}
 

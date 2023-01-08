@@ -28,6 +28,14 @@ func TestAnonymizeTrace(t *testing.T) {
 	// secretStrings contains strings that appear in inTrace, but that should
 	// not appear in the anonymized trace.
 	secretStrings := []string{"/Users/", "/felix.geisendoerfer/"}
+
+	// gotWantedStrings is a map that contains all strings that we expect to
+	// appear in the anonymized trace.
+	gotWantedStrings := make(map[string]bool)
+	for k, _ := range gcMarkWorkerModeStrings {
+		gotWantedStrings[k] = false
+	}
+
 	// Decode each event and check that it does not contain any secret strings.
 	for {
 		var ev encoding.Event
@@ -40,6 +48,15 @@ func TestAnonymizeTrace(t *testing.T) {
 		for _, s := range secretStrings {
 			require.NotContains(t, string(ev.Str), s)
 		}
+
+		if _, ok := gotWantedStrings[string(ev.Str)]; ok {
+			gotWantedStrings[string(ev.Str)] = true
+		}
+	}
+
+	// Check that we got all the strings that we wanted.
+	for k, v := range gotWantedStrings {
+		require.True(t, v, "did not get string %q", k)
 	}
 
 	// TODO: The test trace doesn't contain any EventUserLog events.
