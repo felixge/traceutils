@@ -1,17 +1,67 @@
+// TODO: Rename to anonymize
 package anon
 
 import (
 	"bytes"
+	"io"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/felixge/traceutils/pkg/encoding"
+	"golang.org/x/tools/go/packages"
 )
 
-// Bytes takes an argument s that is expected to contain a pkg.func or a file
-// path and obfuscates it. The obfuscation is done by replacing all upper and
-// lower case letters with "X" and "x" respectively. Additionally it keeps any
-// ".go" suffix of s intact. For file paths ending in a valid package name, only
-// the prefix of the path is obfuscated. For example:
-func Bytes(s []byte, packages []string) {
+// AnonymizeTrace read a runtime/trace file from r and writes an obfuscated
+// version of it to w. The obfuscation is done by replacing all references to
+// file paths and packages not found Go's standard library with obfuscated
+// versions. The obfuscation is done by replacing all upper and lower case
+// letters with "X" and "x" respectively. Additionally it keeps any ".go"
+// suffixes intact. For file paths ending in a stdlib package name, only the
+// prefix of the path is obfuscated. On success AnonymizeTrace returns nil. If
+// an error occurs, AnonymizeTrace returns the error.
+func AnonymizeTrace(r io.Reader, w io.Writer) error {
+	// Determine stdlib packages
+	pkgs, err := packages.Load(nil, "std")
+	if err != nil {
+		return err
+	}
+	var stdlibPkgs []string
+	for _, pkg := range pkgs {
+		stdlibPkgs = append(stdlibPkgs, pkg.PkgPath)
+	}
+
+	// Initialize encoder and decoder
+	enc := encoding.NewEncoder(w)
+	dec, err := encoding.NewDecoder(r)
+	if err != nil {
+		return err
+	}
+	// Obfuscate all string events
+	for {
+		var ev encoding.Event
+		if err := dec.Decode(&ev); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		if ev.Type == encoding.EventString {
+			anonymizeString(ev.Str, stdlibPkgs)
+		}
+		// TODO: Handle encoding.EventUserLog
+		if err := enc.Encode(&ev); err != nil {
+			return err
+		}
+	}
+}
+
+// anonymizeString takes an argument s that is expected to contain a pkg.func or
+// a file path and obfuscates it. The obfuscation is done by replacing all upper
+// and lower case letters with "X" and "x" respectively. Additionally it keeps
+// any ".go" suffix of s intact. For file paths ending in a valid package name,
+// only the prefix of the path is obfuscated. For example:
+func anonymizeString(s []byte, packages []string) {
 	if len(s) == 0 {
 		return
 	}
@@ -58,14 +108,15 @@ func Bytes(s []byte, packages []string) {
 // obfuscate replaces all upper and lower case letters with "X" and "x"
 // respectively. Additionally it keeps any ".go" suffix of b intact.
 func obfuscate(b []byte) {
+	// Keep ".go" suffix intact
 	if bytes.HasSuffix(b, []byte(".go")) {
 		b = b[:len(b)-3]
 	}
 
-	// iterate over all utf8 runes in b
-	// if rune is not in allowed, replace with "x"
+	// Iterate over all utf8 runes in b
 	for i := 0; i < len(b); {
 		r, size := utf8.DecodeRune(b[i:])
+		// Replace all upper and lower case letters with "X" and "x"
 		if unicode.IsUpper(r) {
 			for j := 0; j < size; j++ {
 				b[i+j] = 'X'
