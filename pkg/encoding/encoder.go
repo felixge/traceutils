@@ -16,6 +16,9 @@ type Encoder struct {
 }
 
 // NewEncoder returns a new encoder that writes to w.
+// Warning: The encoder is unbuffered, not supplying a buffered writer will
+// result in up to 100x slower performance.
+// TODO: Maybe add a buffered writer to the encoder?
 func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{w: w, scratch10: make([]byte, 10)}
 }
