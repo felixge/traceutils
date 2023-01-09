@@ -101,25 +101,24 @@ func anonymizeFunc(s []byte) {
 }
 
 func anonymizePath(s []byte) {
-	var longest struct {
-		length int
-		prefix []byte
-		suffix []byte
+	prefix, suffix, found := bytes.Cut(s, []byte("/src/"))
+	if !found {
+		obfuscate(s)
+		return
 	}
 
-	for _, stdPath := range stdlibPaths {
-		prefix, suffix, found := bytes.Cut(s, stdPath)
-		if found && len(stdPath) > longest.length && len(suffix) > 1 && !bytes.Contains(suffix[1:], []byte("/")) {
-			longest.length = len(stdPath)
-			longest.prefix = prefix
-			longest.suffix = suffix
+	for _, stdPath := range stdlibPkgs {
+		// +2 because we want the "/" after the stdlib package name to be
+		// followed by at least one non "/" character.
+		isStdlibPath := len(suffix) >= len(stdPath)+2 &&
+			bytes.HasPrefix(suffix, stdPath) &&
+			!bytes.Contains(suffix[len(stdPath)+1:], []byte("/"))
+		if isStdlibPath {
+			obfuscate(prefix)
+			return
 		}
 	}
-	if longest.length == 0 {
-		obfuscate(s)
-	} else {
-		obfuscate(longest.prefix)
-	}
+	obfuscate(s)
 }
 
 // obfuscate replaces all upper and lower case letters with "X" and "x"
@@ -158,12 +157,4 @@ var stdlibPkgs = func() [][]byte {
 		stdlibPkgs = append(stdlibPkgs, []byte(pkg.PkgPath))
 	}
 	return stdlibPkgs
-}()
-
-var stdlibPaths = func() [][]byte {
-	var paths [][]byte
-	for _, pkg := range stdlibPkgs {
-		paths = append(paths, append([]byte("src/"), pkg...))
-	}
-	return paths
 }()
