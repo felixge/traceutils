@@ -18,7 +18,10 @@ type Decoder struct {
 // NewDecoder returns a new decoder that reads from r.
 // Only supporting go 1.19 traces for now.
 func NewDecoder(r io.Reader) *Decoder {
-	p := &Decoder{in: bufio.NewReader(r)}
+	p := &Decoder{
+		in:   bufio.NewReader(r),
+		args: make([]byte, 0, 1<<10),
+	}
 	return p
 }
 
@@ -77,17 +80,8 @@ func (d *Decoder) Decode(e *Event) error {
 			return err
 		}
 		e.Args = append(e.Args, id)
-		// Read string length
-		length, err := readVal(d.in)
+		e.Str, err = readNext(d.in, e.Str)
 		if err != nil {
-			return err
-		}
-		// Allocate e.Str of the correct length
-		for i := uint64(0); i < length; i++ {
-			e.Str = append(e.Str, 0)
-		}
-		// Read string into e.Str
-		if _, err := io.ReadFull(d.in, e.Str); err != nil {
 			return err
 		}
 	} else if narg < 4 {
@@ -106,20 +100,11 @@ func (d *Decoder) Decode(e *Event) error {
 		// encoded as a base-128 varint length followed by a byte slice of
 		// base-128 varints.
 
-		// Read length of argument byte slice
-		length, err := readVal(d.in)
+		d.args, err = readNext(d.in, d.args)
 		if err != nil {
 			return err
 		}
-		// Allocate argument byte slice
-		for i := uint64(0); i < length; i++ {
-			d.args = append(d.args, 0)
-		}
-		// Read argument byte slice
-		_, err = io.ReadFull(d.in, d.args)
-		if err != nil {
-			return err
-		}
+
 		// Decode argument byte slice.
 		// Reuse d.br for this to avoid allocations.
 		d.br.Reset(d.args)
@@ -157,7 +142,25 @@ func (d *Decoder) Decode(e *Event) error {
 	return nil
 }
 
-// readVal reads a base-128 varint encoded value from an io.Reader.
+func readNext(r *bufio.Reader, buf []byte) ([]byte, error) {
+	// Read length of byte slice
+	length, err := readVal(r)
+	if err != nil {
+		return nil, err
+	}
+	// Grow byte slice
+	if len(buf) < int(length) {
+		buf = append(buf, make([]byte, int(length)-len(buf))...)
+	}
+	// Read byte slice
+	_, err = io.ReadFull(r, buf)
+	if err != nil {
+		return nil, err
+	}
+	return buf, err
+}
+
+// readVal reads a base-128 varint encoded value from r.
 func readVal(r io.ByteReader) (uint64, error) {
 	var val uint64 // decoded value
 	var shift uint // number of bits to shift
