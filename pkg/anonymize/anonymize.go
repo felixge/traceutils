@@ -78,21 +78,29 @@ func anonymizeString(s []byte) {
 
 	if s[0] != '/' {
 		// s is probably a pkg.func
-		pkg, _, found := bytes.Cut(s, []byte("."))
-		if !found {
-			obfuscate(s)
-			return
-		}
-		for _, stdlibPkg := range stdlibPkgs {
-			if bytes.Equal(pkg, []byte(stdlibPkg)) {
-				return
-			}
-		}
+		anonymizeFunc(s)
+	} else {
+		// s is probably a file path
+		anonymizePath(s)
+	}
+}
+
+func anonymizeFunc(s []byte) {
+	// s is probably a pkg.func
+	pkg, _, found := bytes.Cut(s, []byte("."))
+	if !found {
 		obfuscate(s)
 		return
 	}
+	for _, stdlibPkg := range stdlibPkgs {
+		if bytes.Equal(pkg, []byte(stdlibPkg)) {
+			return
+		}
+	}
+	obfuscate(s)
+}
 
-	// s is probably a file path
+func anonymizePath(s []byte) {
 	var longest struct {
 		length int
 		prefix []byte
@@ -112,7 +120,6 @@ func anonymizeString(s []byte) {
 	} else {
 		obfuscate(longest.prefix)
 	}
-
 }
 
 // obfuscate replaces all upper and lower case letters with "X" and "x"
