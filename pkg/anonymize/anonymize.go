@@ -10,14 +10,15 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// AnonymizeTrace read a runtime/trace file from r and writes an obfuscated
+// AnonymizeTrace reads a runtime/trace file from r and writes an obfuscated
 // version of it to w. The obfuscation is done by replacing all references to
 // file paths and packages not found Go's standard library with obfuscated
 // versions. The obfuscation is done by replacing all upper and lower case
 // letters with "X" and "x" respectively. Additionally it keeps any ".go"
-// suffixes intact. For file paths ending in a stdlib package name, only the
-// prefix of the path is obfuscated. On success AnonymizeTrace returns nil. If
-// an error occurs, AnonymizeTrace returns the error.
+// suffixes and special GC strings intact. For file paths ending in a stdlib
+// package name, only the prefix of the path is obfuscated. On success
+// AnonymizeTrace returns nil. If an error occurs, AnonymizeTrace returns the
+// error.
 //
 // TODO: This function is pretty slow, maybe we can do better? It takes about
 // 6min17s to anonymize a 280MB trace on my machine.
