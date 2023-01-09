@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime/pprof"
 
 	"github.com/felixge/traceutils/pkg/anonymize"
 )
@@ -25,9 +26,25 @@ func realMain() error {
 		fmt.Fprintf(os.Stderr, "  - anonymize: Anonymizes a trace file.\n")
 	}
 
+	var cpuProfileF = flag.String("cpuprofile", "", "write cpu profile to file")
+
 	// Parse the command line arguments and run the command using the
 	// appropriate function.
 	flag.Parse()
+
+	if *cpuProfileF != "" {
+		file, err := os.Create(*cpuProfileF)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		if err := pprof.StartCPUProfile(file); err != nil {
+			return err
+		}
+		defer pprof.StopCPUProfile()
+	}
+
 	switch cmd := flag.Arg(0); cmd {
 	case "anonymize":
 		// Open the input file
