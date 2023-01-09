@@ -43,7 +43,8 @@ func (e *Encoder) Encode(ev *Event) error {
 	if narg > 3 {
 		narg = 3
 	}
-	if _, e.err = e.w.Write([]byte{byte(ev.Type) | narg<<6}); e.err != nil {
+	e.scratch10[0] = byte(ev.Type) | narg<<6
+	if _, e.err = e.w.Write(e.scratch10[0:1]); e.err != nil {
 		return e.err
 	}
 
