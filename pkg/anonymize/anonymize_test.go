@@ -31,7 +31,7 @@ func TestAnonymizeTrace(t *testing.T) {
 	// gotWantedStrings is a map that contains all strings that we expect to
 	// appear in the anonymized trace.
 	gotWantedStrings := make(map[string]bool)
-	for k, _ := range gcMarkWorkerModeStrings {
+	for k := range gcMarkWorkerModeStrings {
 		gotWantedStrings[k] = false
 	}
 
