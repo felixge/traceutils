@@ -24,10 +24,8 @@ import (
 func AnonymizeTrace(r io.Reader, w io.Writer) error {
 	// Initialize encoder and decoder
 	enc := encoding.NewEncoder(w)
-	dec, err := encoding.NewDecoder(r)
-	if err != nil {
-		return err
-	}
+	dec := encoding.NewDecoder(r)
+
 	// Obfuscate all string events
 	var ev encoding.Event
 	for {

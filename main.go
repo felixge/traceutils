@@ -44,15 +44,12 @@ func (c *Cmd) Run() error {
 	}
 	defer file.Close()
 
-	p, err := encoding.NewDecoder(file)
-	if err != nil {
-		return err
-	}
+	dec := encoding.NewDecoder(file)
 
 	var n int
 	for {
 		var e encoding.Event
-		if err := p.Decode(&e); err == io.EOF {
+		if err := dec.Decode(&e); err == io.EOF {
 			fmt.Printf("%d events parsed\n", n)
 			return nil
 		} else if err != nil {

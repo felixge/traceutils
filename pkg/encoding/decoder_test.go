@@ -19,14 +19,13 @@ func TestDecoder(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a decoder
-	p, err := NewDecoder(bytes.NewReader(data))
-	require.NoError(t, err)
+	dec := NewDecoder(bytes.NewReader(data))
 
 	// Decode each event and count them.
 	var count int
 	for {
 		e := Event{}
-		if err := p.Decode(&e); err != nil {
+		if err := dec.Decode(&e); err != nil {
 			require.Equal(t, io.EOF, err)
 			break
 		}
@@ -45,8 +44,7 @@ func TestDecodeEncode(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a decoder
-	dec, err := NewDecoder(bytes.NewReader(inTrace))
-	require.NoError(t, err)
+	dec := NewDecoder(bytes.NewReader(inTrace))
 
 	// Create an encoder
 	var outTrace bytes.Buffer

@@ -9,17 +9,17 @@ import (
 
 // Decoder decodes runtime/trace events from a reader.
 type Decoder struct {
-	in   *bufio.Reader
-	br   bytes.Reader
-	args []byte // scratch buf
+	in         *bufio.Reader
+	br         bytes.Reader
+	readHeader bool
+	args       []byte // scratch buf
 }
 
 // NewDecoder returns a new decoder that reads from r.
-// The header is read and an error is returned if it is invalid.
 // Only supporting go 1.19 traces for now.
-func NewDecoder(r io.Reader) (*Decoder, error) {
+func NewDecoder(r io.Reader) *Decoder {
 	p := &Decoder{in: bufio.NewReader(r)}
-	return p, p.header()
+	return p
 }
 
 // header is the trace file header.
@@ -47,6 +47,13 @@ func (d *Decoder) header() error {
 
 // Decode parses an event or returns an error.
 func (d *Decoder) Decode(e *Event) error {
+	if !d.readHeader {
+		if err := d.header(); err != nil {
+			return err
+		}
+		d.readHeader = true
+	}
+
 	// Read event type and argument count contained in the first byte
 	firstByte, err := d.in.ReadByte()
 	if err != nil {

@@ -22,8 +22,7 @@ func TestAnonymizeTrace(t *testing.T) {
 	require.NoError(t, AnonymizeTrace(bytes.NewReader(inTrace), &outTrace))
 
 	// Create a decoder for the anonymized trace.
-	dec, err := encoding.NewDecoder(bytes.NewReader(outTrace.Bytes()))
-	require.NoError(t, err)
+	dec := encoding.NewDecoder(bytes.NewReader(outTrace.Bytes()))
 
 	// secretStrings contains strings that appear in inTrace, but that should
 	// not appear in the anonymized trace.
