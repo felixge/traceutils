@@ -9,7 +9,7 @@ import (
 
 // Decoder decodes runtime/trace events from a reader.
 type Decoder struct {
-	in         *bufio.Reader
+	in         *reader
 	br         bytes.Reader
 	readHeader bool
 	args       []byte // scratch buf
@@ -18,7 +18,7 @@ type Decoder struct {
 // NewDecoder returns a new decoder that reads from r.
 // Only supporting go 1.19 traces for now.
 func NewDecoder(r io.Reader) *Decoder {
-	p := &Decoder{in: bufio.NewReader(r)}
+	p := &Decoder{in: newReader(r)}
 	return p
 }
 
@@ -43,6 +43,11 @@ func (d *Decoder) header() error {
 		return fmt.Errorf("invalid header: %q", string(buf))
 	}
 	return nil
+}
+
+// Offset returns the current offset in the trace.
+func (d *Decoder) Offset() int64 {
+	return d.in.Offset
 }
 
 // Decode parses an event or returns an error.
@@ -178,4 +183,32 @@ func readVal(r io.ByteReader) (uint64, error) {
 		shift += 7
 	}
 	return val, nil
+}
+
+// newReader returns a new reader for r.
+func newReader(r io.Reader) *reader {
+	return &reader{r: bufio.NewReader(r)}
+}
+
+// reader is a buffered reader that keeps track of the number of bytes read.
+type reader struct {
+	r      *bufio.Reader
+	Offset int64
+}
+
+// Read reads up to len(p) bytes into p. It returns the number of bytes read or
+// an error.
+func (r *reader) Read(p []byte) (n int, err error) {
+	n, err = r.r.Read(p)
+	r.Offset += int64(n)
+	return n, err
+}
+
+// ReadByte reads a single byte from the reader.
+func (r *reader) ReadByte() (byte, error) {
+	b, err := r.r.ReadByte()
+	if err == nil {
+		r.Offset++
+	}
+	return b, err
 }

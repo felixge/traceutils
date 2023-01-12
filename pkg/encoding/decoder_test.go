@@ -71,4 +71,6 @@ func TestDecodeEncode(t *testing.T) {
 	require.Equal(t, len(inTrace), outTrace.Len())
 	// Check that the encoded trace is the same as the original.
 	require.Equal(t, inTrace, outTrace.Bytes())
+	// Check that the offset is now equal to the size of the input.
+	require.Equal(t, int64(len(inTrace)), dec.Offset())
 }
