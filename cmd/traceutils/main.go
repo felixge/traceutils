@@ -63,7 +63,7 @@ func realMain() error {
 	}
 
 	switch cmd := flag.Arg(0); cmd {
-	case "anonymize":
+	case "anon", "anonymize":
 		// Open the input file
 		inFile, err := os.Open(flag.Arg(1))
 		if err != nil {
