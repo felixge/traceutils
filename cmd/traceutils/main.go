@@ -68,10 +68,17 @@ func realMain() error {
 		},
 	}
 
+	stw := &ffcli.Command{
+		Name:       "stw",
+		ShortUsage: "traceutils stw <input>",
+		ShortHelp:  "Report all stop-the-world events in a trace.",
+		Exec:       func(ctx context.Context, args []string) error { return STWCommand(args) },
+	}
+
 	root := &ffcli.Command{
 		ShortUsage:  "traceutils [flags] <subcommand>",
 		FlagSet:     rootFlagSet,
-		Subcommands: []*ffcli.Command{anonymize, breakdown},
+		Subcommands: []*ffcli.Command{anonymize, breakdown, stw},
 		Exec: func(ctx context.Context, args []string) error {
 			rootFlagSet.Usage()
 			return nil
