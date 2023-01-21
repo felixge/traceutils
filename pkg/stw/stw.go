@@ -36,18 +36,18 @@ func Events(r io.Reader) ([]*Event, error) {
 		case encoding.EventBatch:
 			lastP = ev.Args[0]
 			lastTs = time.Duration(ev.Args[1])
-			if minTs == 0 || lastTs < minTs {
-				minTs = lastTs
-			}
 		case encoding.EventFrequency:
 			ticksPerSec = int64(ev.Args[0])
 			if ticksPerSec <= 0 {
 				return nil, fmt.Errorf("negative ticksPerSec: %d", ticksPerSec)
 			}
-		case encoding.EventTimerGoroutine, encoding.EventStack:
+		case encoding.EventTimerGoroutine, encoding.EventStack, encoding.EventString:
 			// ignore
 		default:
 			lastTs += time.Duration(ev.Args[0])
+			if minTs == 0 || lastTs < minTs {
+				minTs = lastTs
+			}
 		}
 
 		switch ev.Type {

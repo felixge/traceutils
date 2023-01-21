@@ -23,20 +23,18 @@ func TestEvents(t *testing.T) {
 	// Assert the number of STW events in the trace.
 	require.Equal(t, 42, len(events))
 
+	// Sort events by start time in ascending order
 	sort.Slice(events, func(i, j int) bool {
 		return events[i].Start < events[j].Start
 	})
 
 	// Validate first event
 	first := events[0]
-	// TODO: go tool trace reports 2323248 - need to figure out the reason for the difference.
-	// require.Equal(t, time.Duration(2323504), first.Start)
-	require.Equal(t, time.Duration(2323504), first.Start)
+	require.Equal(t, time.Duration(2323248), first.Start)
 	require.Equal(t, time.Duration(18784), first.Duration())
 
 	// Validate last event
 	last := events[len(events)-1]
-	// TODO: Should be 504956960
-	require.Equal(t, time.Duration(504957216), last.Start)
+	require.Equal(t, time.Duration(504956960), last.Start)
 	require.Equal(t, time.Duration(89376), last.Duration())
 }
