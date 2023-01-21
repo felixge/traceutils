@@ -26,6 +26,7 @@ func realMain() error {
 		traceF      = rootFlagSet.String("trace", "", "write trace to file")
 
 		breakdownFlagSet = flag.NewFlagSet("traceutils breakdown", flag.ExitOnError)
+		stwFlagSet       = flag.NewFlagSet("traceutils stw", flag.ExitOnError)
 	)
 
 	anonymize := &ffcli.Command{
@@ -62,24 +63,43 @@ func realMain() error {
 		ShortHelp:   "Break down the contents of a trace.",
 		FlagSet:     breakdownFlagSet,
 		Subcommands: []*ffcli.Command{breakdownCSV, breakdownBytes, breakdownCount},
-		Exec: func(ctx context.Context, args []string) error {
+		Exec: func(_ context.Context, _ []string) error {
 			breakdownFlagSet.Usage()
 			return nil
 		},
 	}
 
+	stwCSV := &ffcli.Command{
+		Name:       "csv",
+		ShortUsage: "traceutils stw csv <input>",
+		ShortHelp:  "List all stop-the-world events in a trace as csv.",
+		Exec:       func(_ context.Context, args []string) error { return STWCommand(STWCSV, args) },
+	}
+
+	stwTop := &ffcli.Command{
+		Name:       "top",
+		ShortUsage: "traceutils stw top <input>",
+		ShortHelp:  "List all stop-the-world events in a trace in descending duration order.",
+		Exec:       func(_ context.Context, args []string) error { return STWCommand(STWTop, args) },
+	}
+
 	stw := &ffcli.Command{
-		Name:       "stw",
-		ShortUsage: "traceutils stw <input>",
-		ShortHelp:  "Report all stop-the-world events in a trace.",
-		Exec:       func(ctx context.Context, args []string) error { return STWCommand(args) },
+		Name:        "stw",
+		ShortUsage:  "traceutils stw <subcommand> <input>",
+		ShortHelp:   "List all stop-the-world events in a trace.",
+		FlagSet:     stwFlagSet,
+		Subcommands: []*ffcli.Command{stwCSV, stwTop},
+		Exec: func(_ context.Context, _ []string) error {
+			stwFlagSet.Usage()
+			return nil
+		},
 	}
 
 	root := &ffcli.Command{
 		ShortUsage:  "traceutils [flags] <subcommand>",
 		FlagSet:     rootFlagSet,
 		Subcommands: []*ffcli.Command{anonymize, breakdown, stw},
-		Exec: func(ctx context.Context, args []string) error {
+		Exec: func(_ context.Context, _ []string) error {
 			rootFlagSet.Usage()
 			return nil
 		},

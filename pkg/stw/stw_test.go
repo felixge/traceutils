@@ -32,9 +32,11 @@ func TestEvents(t *testing.T) {
 	first := events[0]
 	require.Equal(t, time.Duration(2323248), first.Start)
 	require.Equal(t, time.Duration(18784), first.Duration())
+	require.Equal(t, SweepTermination, first.Type)
 
 	// Validate last event
 	last := events[len(events)-1]
 	require.Equal(t, time.Duration(504956960), last.Start)
 	require.Equal(t, time.Duration(89376), last.Duration())
+	require.Equal(t, MarkTermination, last.Type)
 }

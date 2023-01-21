@@ -72,6 +72,7 @@ Example output:
 
 ```
 traceutils breakdown csv <input>
+
 ```
 
 Example output:
@@ -84,6 +85,50 @@ EventProcStart,1198,5381
 EventGoStartLocal,61612,193841
 EventGoSysCall,1791,7069
 ...
+```
+
+## stw
+
+List all stop-the-world events in a trace.
+
+### top
+
+```
+traceutils stw top <input>
+```
+
+Example output:
+
+```
++-----------+--------------+-------------------+------------+
+| DURATION  |    START     |       TYPE        | PERCENTILE |
++-----------+--------------+-------------------+------------+
+| 154.912µs | 227.279429ms | mark termination  |     100.00 |
+| 89.376µs  | 504.95696ms  | mark termination  |      97.62 |
+| 70.128µs  | 200.131507ms | mark termination  |      95.24 |
+| 64.912µs  | 214.2521ms   | sweep termination |      92.86 |
+| 62.544µs  | 224.908853ms | sweep termination |      90.48 |
+...
+| 18.784µs  | 2.323248ms   | sweep termination |       2.38 |
++-----------+--------------+-------------------+------------+
+```
+
+### csv
+
+```
+traceutils stw csv <input>
+```
+
+Example output:
+
+```
+Start (ms),Duration (ms),Type
+2.323248,0.018784,sweep termination
+2.777536,0.061712,mark termination
+7.065904,0.020464,sweep termination
+7.808416,0.034032,mark termination
+...
+504.956960,0.089376,mark termination
 ```
 
 # License
