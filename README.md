@@ -6,6 +6,8 @@ This repository contains code for decoding and encoding runtime/trace files as w
 go install github.com/felixge/traceutils/cmd/traceutils@latest
 ```
 
+Commands: [anonymize](#anonymize), [breakdown](#breakdown), [flamescope](#flamescope), [stw](#stw)
+
 ## anonymize
 
 The anonymize command can be used to remove all file paths, function names and user logs from a trace file. The go stdlib is not anonymized, but all other packages are. This is useful for sharing traces that may contain sensitive information.
