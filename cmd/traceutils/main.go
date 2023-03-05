@@ -69,6 +69,13 @@ func realMain() error {
 		},
 	}
 
+	flamescope := &ffcli.Command{
+		Name:       "flamescope",
+		ShortUsage: "traceutils flamescope <input> <output>",
+		ShortHelp:  "Extract CPU samples from a trace and convert them to a format suitable for FlameScope.",
+		Exec:       func(_ context.Context, args []string) error { return FlameScopeCommand(args) },
+	}
+
 	stwCSV := &ffcli.Command{
 		Name:       "csv",
 		ShortUsage: "traceutils stw csv <input>",
@@ -98,7 +105,7 @@ func realMain() error {
 	root := &ffcli.Command{
 		ShortUsage:  "traceutils [flags] <subcommand>",
 		FlagSet:     rootFlagSet,
-		Subcommands: []*ffcli.Command{anonymize, breakdown, stw},
+		Subcommands: []*ffcli.Command{anonymize, breakdown, flamescope, stw},
 		Exec: func(_ context.Context, _ []string) error {
 			rootFlagSet.Usage()
 			return nil

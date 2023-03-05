@@ -87,6 +87,18 @@ EventGoSysCall,1791,7069
 ...
 ```
 
+## flamescope
+
+Extract CPU samples from a trace and convert them to a format suitable for [FlameScope](https://github.com/Netflix/flamescope).
+
+```
+traceutils flamescope <input> <output>
+```
+
+Example output:
+
+![screenshot of a trace viewed in flamescope](./images/flamescope.png)
+
 ## stw
 
 List all stop-the-world events in a trace.
