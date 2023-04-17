@@ -4,21 +4,27 @@ import (
 	"bufio"
 	"bytes"
 	"io"
-	"unicode"
-	"unicode/utf8"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/felixge/traceutils/pkg/encoding"
 	"golang.org/x/tools/go/packages"
 )
 
+// replacement returns a string that is used to obfuscate file paths and
+// packages not found in Go's standard library. It's a function to ensure the
+// slice won't be overwritten by the caller.
+var replacement = func() []byte { return []byte("XXX") }
+
 // AnonymizeTrace reads a runtime/trace file from r and writes an obfuscated
 // version of it to w. The obfuscation is done by replacing all references to
 // file paths and packages not found Go's standard library with obfuscated
-// versions. The obfuscation is done by replacing all upper and lower case
-// letters with "X" and "x" respectively. Additionally it keeps any ".go"
-// suffixes and special GC strings intact. For file paths ending in a stdlib
-// package name, only the prefix of the path is obfuscated. On success
-// AnonymizeTrace returns nil. If an error occurs, AnonymizeTrace returns the
+// versions. The obfuscation is done by replacing all letters that need
+// obfuscation with "XXX". Additionally it keeps any ".go" suffixes and special
+// GC strings intact. For file paths ending in a stdlib package name, only the
+// prefix of the path is obfuscated. On success AnonymizeTrace returns nil. If
+// an error occurs, AnonymizeTrace returns the
 // error.
 func AnonymizeTrace(r io.Reader, w io.Writer) error {
 	// Initialize encoder and decoder
@@ -39,7 +45,7 @@ func AnonymizeTrace(r io.Reader, w io.Writer) error {
 		}
 
 		// Obfuscate string
-		anonymizeString(ev.Str)
+		ev.Str = anonymizeString(ev.Str)
 
 		// Encode the obfuscated event
 		if err := enc.Encode(&ev); err != nil {
@@ -58,89 +64,63 @@ var gcMarkWorkerModeStrings = map[string]bool{
 	"GC (idle)":       true,
 }
 
-// anonymizeString takes an argument s that is expected to contain a pkg.func or
-// a file path and obfuscates it. The obfuscation is done by replacing all upper
-// and lower case letters with "X" and "x" respectively. Additionally it keeps
-// any ".go" suffix of s intact. For file paths ending in a valid package name,
-// only the prefix of the path is obfuscated. For example:
-func anonymizeString(s []byte) {
+// anonymizeString obfuscates the given string and returns the obfuscated
+// version.
+func anonymizeString(s []byte) []byte {
 	if len(s) == 0 {
-		return
+		return s
 	}
 
 	// Don't obfuscate the gcMarkWorkerModeStrings found in every trace
 	if _, ok := gcMarkWorkerModeStrings[string(s)]; ok {
-		return
+		return s
 	}
 
 	if s[0] != '/' {
 		// s is probably a pkg.func
-		anonymizeFunc(s)
-	} else {
-		// s is probably a file path
-		anonymizePath(s)
+		return anonymizeFunc(s)
 	}
+	// s is probably a file path
+	return anonymizePath(s)
 }
 
-func anonymizeFunc(s []byte) {
+func anonymizeFunc(s []byte) []byte {
 	// s is probably a pkg.func
 	pkg, _, found := bytes.Cut(s, []byte("."))
 	if !found {
-		obfuscate(s)
-		return
+		return replacement()
 	}
 	for _, stdlibPkg := range stdlibPkgs {
 		if bytes.Equal(pkg, []byte(stdlibPkg)) {
-			return
+			return s
 		}
 	}
-	obfuscate(s)
+	return replacement()
 }
 
-func anonymizePath(s []byte) {
-	prefix, suffix, found := bytes.Cut(s, []byte("/src/"))
-	if !found {
-		obfuscate(s)
-		return
+func anonymizePath(s []byte) []byte {
+	var srcSep = []byte("/src/")
+	head, tail := bytesLastSplit(s, srcSep)
+	if head == nil || tail == nil {
+		return replacement()
 	}
-
-	for _, stdPath := range stdlibPkgs {
-		// +2 because we want the "/" after the stdlib package name to be
-		// followed by at least one non "/" character.
-		isStdlibPath := len(suffix) >= len(stdPath)+2 &&
-			bytes.HasPrefix(suffix, stdPath) &&
-			!bytes.Contains(suffix[len(stdPath)+1:], []byte("/"))
-		if isStdlibPath {
-			obfuscate(prefix)
-			return
-		}
+	if pathInStdLib(string(tail)) {
+		return append(append(replacement(), srcSep...), tail...)
 	}
-	obfuscate(s)
+	if bytes.HasSuffix(s, []byte(".go")) {
+		return append(replacement(), []byte(".go")...)
+	}
+	return replacement()
 }
 
-// obfuscate replaces all upper and lower case letters with "X" and "x"
-// respectively. Additionally it keeps any ".go" suffix of b intact.
-func obfuscate(b []byte) {
-	// Keep ".go" suffix intact
-	if bytes.HasSuffix(b, []byte(".go")) {
-		b = b[:len(b)-3]
+func bytesLastSplit(s, sep []byte) (head, tail []byte) {
+	if len(sep) == 0 {
+		return s, nil
 	}
-
-	// Iterate over all utf8 runes in b
-	for i := 0; i < len(b); {
-		r, size := utf8.DecodeRune(b[i:])
-		// Replace all upper and lower case letters with "X" and "x"
-		if unicode.IsUpper(r) {
-			for j := 0; j < size; j++ {
-				b[i+j] = 'X'
-			}
-		} else if unicode.IsLower(r) {
-			for j := 0; j < size; j++ {
-				b[i+j] = 'x'
-			}
-		}
-		i += size
+	if idx := bytes.LastIndex(s, sep); idx >= 0 {
+		return s[:idx], s[idx+len(sep):]
 	}
+	return nil, s
 }
 
 var stdlibPkgs = func() [][]byte {
@@ -155,3 +135,11 @@ var stdlibPkgs = func() [][]byte {
 	}
 	return stdlibPkgs
 }()
+
+// pathInStdLib returns true if the given path is in Go's standard
+// library.
+func pathInStdLib(path string) bool {
+	srcPath := filepath.Join(runtime.GOROOT(), "src", path)
+	stat, err := os.Stat(srcPath)
+	return err == nil && !stat.IsDir()
+}

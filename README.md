@@ -12,8 +12,6 @@ Commands: [anonymize](#anonymize), [breakdown](#breakdown), [flamescope](#flames
 
 The anonymize command can be used to remove all file paths, function names and user logs from a trace file. The go stdlib is not anonymized, but all other packages are. This is useful for sharing traces that may contain sensitive information.
 
-Please note that the current implementation retains information regarding the length and uppercasing of anonymized strings, so in some cases it's possible to reverse the obfuscation. I'll add a more aggressive algorithm at some point.
-
 ```
 traceutils anonymize <input> <output>
 ```
