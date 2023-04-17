@@ -6,7 +6,7 @@ This repository contains code for decoding and encoding runtime/trace files as w
 go install github.com/felixge/traceutils/cmd/traceutils@latest
 ```
 
-Commands: [anonymize](#anonymize), [breakdown](#breakdown), [flamescope](#flamescope), [stw](#stw)
+Commands: [anonymize](#anonymize), [breakdown](#breakdown), [flamescope](#flamescope), [strings](#strings), [stw](#stw)
 
 ## anonymize
 
@@ -100,6 +100,27 @@ traceutils flamescope <input> <output>
 Example output:
 
 ![screenshot of a trace viewed in flamescope](./images/flamescope.png)
+
+## strings
+
+Prints all strings contained inside of a trace. This is useful for verifying the output of anonymize.
+
+```
+traceutils strings <input>
+```
+
+Example output:
+
+```
+Not worker
+GC (dedicated)
+GC (fractional)
+GC (idle)
+runtime.asyncPreempt
+XXX/src/runtime/preempt_arm64.s
+XXX
+XXX.go
+```
 
 ## stw
 
