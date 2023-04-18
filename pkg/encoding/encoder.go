@@ -39,11 +39,11 @@ func (e *Encoder) Encode(ev *Event) error {
 	}
 
 	// Write event type and argument count
-	narg := byte(len(ev.Args)) - 1
+	narg := len(ev.Args) - 1
 	if narg > 3 {
 		narg = 3
 	}
-	e.scratch10[0] = byte(ev.Type) | narg<<6
+	e.scratch10[0] = byte(ev.Type) | byte(narg)<<6
 	if _, e.err = e.w.Write(e.scratch10[0:1]); e.err != nil {
 		return e.err
 	}
