@@ -97,6 +97,8 @@ Extract CPU samples from a trace and convert them to a format suitable for [Flam
 traceutils flamescope <input> <output>
 ```
 
+See [FlameScope for Go](https://blog.felixge.de/flamescope-for-go/) blog post for more details.
+
 Example output:
 
 ![screenshot of a trace viewed in flamescope](./images/flamescope.png)
