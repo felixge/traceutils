@@ -15,7 +15,7 @@ import (
 // The correctness of the events is checked in the TestDecodeEncode test.
 func TestDecoder(t *testing.T) {
 	// Read the test trace.
-	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "trace.bin"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", "trace.bin"))
 	require.NoError(t, err)
 
 	// Create a decoder
@@ -49,7 +49,7 @@ func TestDecodeEncode(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Trace, func(t *testing.T) {
 			// Read the test trace.
-			inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", test.Trace))
+			inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", test.Trace))
 			require.NoError(t, err)
 
 			// Create a decoder

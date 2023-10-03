@@ -12,7 +12,7 @@ import (
 
 func TestFlameScope(t *testing.T) {
 	// Read the test trace.
-	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "test-encoding-json.trace"))
+	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", "test-encoding-json.trace"))
 	require.NoError(t, err)
 
 	// Extract the STW events from the trace

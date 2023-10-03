@@ -12,7 +12,7 @@ import (
 
 func TestByEventType(t *testing.T) {
 	// Read the test trace.
-	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "trace.bin"))
+	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", "trace.bin"))
 	require.NoError(t, err)
 
 	// Break down the trace by event type.

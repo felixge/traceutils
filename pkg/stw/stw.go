@@ -70,13 +70,9 @@ func Events(r io.Reader) ([]*Event, error) {
 				// Create a new STW event
 				event := &Event{Start: lastTs, P: lastP}
 				// Determine the type of STW event
-				switch ev.Args[1] {
-				case 0:
-					event.Type = MarkTermination
-				case 1:
-					event.Type = SweepTermination
-				default:
-					return nil, fmt.Errorf("unknown STW kind %d", ev.Args[0])
+				event.Type, err = eventType(dec.Version(), ev.Args[1])
+				if err != nil {
+					return nil, err
 				}
 				// Add the event to the list of events
 				events = append(events, event)
@@ -116,6 +112,44 @@ func Events(r io.Reader) ([]*Event, error) {
 	return events, nil
 }
 
+func eventType(version int, value uint64) (et EventType, err error) {
+	if version < 1021 {
+		switch value {
+		case 0:
+			et = MarkTermination
+		case 1:
+			et = SweepTermination
+		default:
+			err = fmt.Errorf("unknown STW kind %d", value)
+		}
+	} else if value < uint64(len(stwReasonGo121[:])) {
+		et = stwReasonGo121[value]
+	} else {
+		err = fmt.Errorf("unknown STW kind %d", value)
+	}
+	return
+}
+
+var stwReasonGo121 = [...]EventType{
+	0:  Unknown,
+	1:  MarkTermination,
+	2:  SweepTermination,
+	3:  WriteHeapDump,
+	4:  GoroutineProfile,
+	5:  GoroutineProfileCleanup,
+	6:  AllGoroutinesStackTrace,
+	7:  ReadMemStats,
+	8:  AllThreadsSyscall,
+	9:  GOMAXPROCS,
+	10: StartTrace,
+	11: StopTrace,
+	12: CountPagesInUse,
+	13: ReadMetricsSlow,
+	14: ReadMemStatsSlow,
+	15: PageCachePagesLeaked,
+	16: ResetDebugLog,
+}
+
 // Event represents a single STW event.
 type Event struct {
 	// Start is the timestamp when the STW event started.
@@ -138,6 +172,21 @@ type EventType string
 
 // List of known STW event types.
 var (
-	MarkTermination  EventType = "mark termination"
-	SweepTermination EventType = "sweep termination"
+	Unknown                 EventType = "unknown"
+	MarkTermination         EventType = "mark termination"
+	SweepTermination        EventType = "sweep termination"
+	WriteHeapDump           EventType = "write heap dump"
+	GoroutineProfile        EventType = "goroutine profile"
+	GoroutineProfileCleanup EventType = "goroutine profile cleanup"
+	AllGoroutinesStackTrace EventType = "all goroutines stack trace"
+	ReadMemStats            EventType = "read mem stats"
+	AllThreadsSyscall       EventType = "AllThreadsSyscall"
+	GOMAXPROCS              EventType = "GOMAXPROCS"
+	StartTrace              EventType = "start trace"
+	StopTrace               EventType = "stop trace"
+	CountPagesInUse         EventType = "CountPagesInUse (test)"
+	ReadMetricsSlow         EventType = "ReadMetricsSlow (test)"
+	ReadMemStatsSlow        EventType = "ReadMemStatsSlow (test)"
+	PageCachePagesLeaked    EventType = "PageCachePagesLeaked (test)"
+	ResetDebugLog           EventType = "ResetDebugLog (test)"
 )

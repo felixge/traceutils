@@ -40,6 +40,22 @@ func TestEvents(t *testing.T) {
 				},
 			},
 		},
+		{
+			GoVersion:  "1.21",
+			EventCount: 42,
+			CheckEvents: map[int]testEvent{
+				0: {
+					Start:    3010128,
+					Duration: 32032,
+					Type:     SweepTermination,
+				},
+				41: {
+					Start:    264450244,
+					Duration: 31168,
+					Type:     MarkTermination,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

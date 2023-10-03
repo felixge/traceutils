@@ -14,7 +14,7 @@ import (
 // TestAnonymizeTrace tests that we can anonymize an example trace.
 func TestAnonymizeTrace(t *testing.T) {
 	// Read the test trace.
-	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "trace.bin"))
+	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", "trace.bin"))
 	require.NoError(t, err)
 
 	// Anonymize the trace and write it to outTrace.

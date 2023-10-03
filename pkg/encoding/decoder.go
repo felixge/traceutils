@@ -13,6 +13,7 @@ type Decoder struct {
 	br         bytes.Reader
 	readHeader bool
 	args       []byte // scratch buf
+	version    int
 }
 
 // NewDecoder returns a new decoder that reads from r.
@@ -34,20 +35,58 @@ var header = func() []byte {
 // header reads the header and returns an error if it is invalid.
 func (d *Decoder) header() error {
 	// Read header
-	buf := make([]byte, len(header))
-	_, err := io.ReadFull(d.in, buf)
+	var buf [16]byte
+	_, err := io.ReadFull(d.in, buf[:])
 	if err != nil {
 		return err
-	} else if !bytes.Equal(buf, header) {
-		// Fail if header is invalid
-		return fmt.Errorf("invalid header: %q", string(buf))
+	} else if version, err := parseHeader(buf[:]); err != nil {
+		return err
+	} else {
+		d.version = version
+	}
+	switch d.version {
+	case 1019, 1021:
+		break
+	default:
+		return fmt.Errorf("unsupported trace file version %v.%v %v", d.version/1000, d.version%1000, d.version)
 	}
 	return nil
+}
+
+// parseHeader parses trace header of the form "go 1.7 trace\x00\x00\x00\x00"
+// and returns parsed version as 1007.
+//
+// This is copied from src/internal/trace/parser.go. in the Go source tree.
+func parseHeader(buf []byte) (int, error) {
+	if len(buf) != 16 {
+		return 0, fmt.Errorf("bad header length")
+	}
+	if buf[0] != 'g' || buf[1] != 'o' || buf[2] != ' ' ||
+		buf[3] < '1' || buf[3] > '9' ||
+		buf[4] != '.' ||
+		buf[5] < '1' || buf[5] > '9' {
+		return 0, fmt.Errorf("not a trace file")
+	}
+	ver := int(buf[5] - '0')
+	i := 0
+	for ; buf[6+i] >= '0' && buf[6+i] <= '9' && i < 2; i++ {
+		ver = ver*10 + int(buf[6+i]-'0')
+	}
+	ver += int(buf[3]-'0') * 1000
+	if !bytes.Equal(buf[6+i:], []byte(" trace\x00\x00\x00\x00")[:10-i]) {
+		return 0, fmt.Errorf("not a trace file")
+	}
+	return ver, nil
 }
 
 // Offset returns the current offset in the trace.
 func (d *Decoder) Offset() int64 {
 	return d.in.Offset
+}
+
+// Version returns the trace file version.
+func (d *Decoder) Version() int {
+	return d.version
 }
 
 // Decode parses an event or returns an error.

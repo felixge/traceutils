@@ -15,7 +15,7 @@ import (
 )
 
 func TestEvents(t *testing.T) {
-	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "trace.bin"))
+	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", "trace.bin"))
 	require.NoError(t, err)
 
 	t.Run("Default Filter", func(t *testing.T) {
@@ -80,7 +80,7 @@ func TestEvents(t *testing.T) {
 }
 
 func TestStacks(t *testing.T) {
-	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "trace.bin"))
+	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", "trace.bin"))
 	require.NoError(t, err)
 
 	t.Run("Default Filter", func(t *testing.T) {
