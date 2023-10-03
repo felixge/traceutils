@@ -7,7 +7,12 @@ import (
 	"os"
 	"runtime/pprof"
 	"runtime/trace"
+	"strconv"
+	"strings"
 
+	gt "honnef.co/go/gotraceui/trace"
+
+	"github.com/felixge/traceutils/pkg/print"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
@@ -26,7 +31,18 @@ func realMain() error {
 		traceF      = rootFlagSet.String("trace", "", "write trace to file")
 
 		breakdownFlagSet = flag.NewFlagSet("traceutils breakdown", flag.ExitOnError)
-		stwFlagSet       = flag.NewFlagSet("traceutils stw", flag.ExitOnError)
+
+		printFlagSet       = flag.NewFlagSet("traceutils print", flag.ExitOnError)
+		printEventsFlagSet = flag.NewFlagSet("traceutils print events", flag.ExitOnError)
+		printG             = printEventsFlagSet.Int64("g", -1, "print events concerning this goroutine, -1 means all goroutines")
+		printP             = printEventsFlagSet.Int64("p", -1, "print events from this proc, -1 means all procs")
+		printMinTs         = printEventsFlagSet.Int64("minTs", 0, "print events with a timestamp >= minTs")
+		printMaxTs         = printEventsFlagSet.Int64("maxTs", -1, "print events with a timestamp <= maxTs, -1 means no upper limit")
+		printVerbose       = printEventsFlagSet.Bool("v", false, "print stack traces for all events")
+		printStacksFlagSet = flag.NewFlagSet("traceutils print stacks", flag.ExitOnError)
+		printStackIDs      = printStacksFlagSet.String("ids", "", "print stacks with these ids, comma separated")
+
+		stwFlagSet = flag.NewFlagSet("traceutils stw", flag.ExitOnError)
 	)
 
 	anonymize := &ffcli.Command{
@@ -76,6 +92,56 @@ func realMain() error {
 		Exec:       func(_ context.Context, args []string) error { return FlameScopeCommand(args) },
 	}
 
+	printEvents := &ffcli.Command{
+		Name:       "events",
+		ShortUsage: "traceutils print events <input>",
+		ShortHelp:  "Print events contained in the trace.",
+		FlagSet:    printEventsFlagSet,
+		Exec: func(_ context.Context, args []string) error {
+			filter := print.DefaultEventFilter()
+			filter.MinTs = gt.Timestamp(*printMinTs)
+			filter.MaxTs = gt.Timestamp(*printMaxTs)
+			filter.G = *printG
+			filter.P = *printP
+			filter.Verbose = *printVerbose
+			return PrintEvents(args, filter)
+		},
+	}
+
+	printStacks := &ffcli.Command{
+		Name:       "stacks",
+		ShortUsage: "traceutils print stacks <input>",
+		ShortHelp:  "Print stacks contained in the trace.",
+		FlagSet:    printStacksFlagSet,
+		Exec: func(_ context.Context, args []string) error {
+			filter := print.DefaultStackFilter()
+			ids := strings.Split(*printStackIDs, ",")
+			for _, idS := range ids {
+				if idS == "" {
+					continue
+				}
+				id, err := strconv.ParseUint(idS, 10, 64)
+				if err != nil {
+					return err
+				}
+				filter.StackIDs = append(filter.StackIDs, uint32(id))
+			}
+			return PrintStacks(args, filter)
+		},
+	}
+
+	print := &ffcli.Command{
+		Name:        "print",
+		ShortUsage:  "traceutils print <subcommand> <input>",
+		ShortHelp:   "Print trace data as plain text.",
+		FlagSet:     printFlagSet,
+		Subcommands: []*ffcli.Command{printEvents, printStacks},
+		Exec: func(_ context.Context, _ []string) error {
+			printFlagSet.Usage()
+			return nil
+		},
+	}
+
 	strings := &ffcli.Command{
 		Name:       "strings",
 		ShortUsage: "traceutils strings <input>",
@@ -112,7 +178,7 @@ func realMain() error {
 	root := &ffcli.Command{
 		ShortUsage:  "traceutils [flags] <subcommand>",
 		FlagSet:     rootFlagSet,
-		Subcommands: []*ffcli.Command{anonymize, breakdown, flamescope, strings, stw},
+		Subcommands: []*ffcli.Command{anonymize, breakdown, print, flamescope, strings, stw},
 		Exec: func(_ context.Context, _ []string) error {
 			rootFlagSet.Usage()
 			return nil

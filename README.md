@@ -6,7 +6,7 @@ This repository contains code for decoding and encoding runtime/trace files as w
 go install github.com/felixge/traceutils/cmd/traceutils@latest
 ```
 
-Commands: [anonymize](#anonymize), [breakdown](#breakdown), [flamescope](#flamescope), [strings](#strings), [stw](#stw)
+Commands: [anonymize](#anonymize), [breakdown](#breakdown), [flamescope](#flamescope), [print](#print), [strings](#strings), [stw](#stw)
 
 ## anonymize
 
@@ -102,6 +102,49 @@ See [FlameScope for Go](https://blog.felixge.de/flamescope-for-go/) blog post fo
 Example output:
 
 ![screenshot of a trace viewed in flamescope](./images/flamescope.png)
+
+## print
+
+### events
+
+```
+traceutils print events <input>
+
+```
+
+Example output:
+
+```
+0 GoCreate p=0 g=0 stk=1 g=1 stack=2
+2208 GoCreate p=0 g=0 stk=1 g=2 stack=3
+2288 GoWaiting p=0 g=2 stk=0 g=2
+2496 GoCreate p=0 g=0 stk=1 g=3 stack=4
+2592 GoWaiting p=0 g=3 stk=0 g=3
+4384 GoCreate p=0 g=0 stk=1 g=4 stack=5
+...
+```
+
+### stacks
+
+```
+traceutils print stacks <input>
+
+```
+
+Example output:
+
+```
+stack 14:
+        runtime/trace.Start.func1()
+                /Users/bob/go/src/github.com/golang/go/src/runtime/trace/trace.go:130
+
+stack 15:
+        runtime.asyncPreempt()
+                /Users/bob/go/src/github.com/golang/go/src/runtime/preempt_arm64.s:47
+        main.main.func1()
+                /Users/bob/go/src/github.com/felixge/felixge.de/runtime-trace-examples/main.go:24
+...
+```
 
 ## strings
 
