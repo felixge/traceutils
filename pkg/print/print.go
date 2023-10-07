@@ -48,7 +48,7 @@ func Events(r io.Reader, w io.Writer, filter EventFilter) error {
 			!matchStackIDs(e, filter.StackIDs) {
 			continue
 		}
-		printEvent(w, e)
+		printEvent(w, trace, e)
 		io.WriteString(w, "\n")
 		if filter.Verbose {
 			printStacks(w, trace, e)
@@ -104,8 +104,19 @@ func matchStackIDs(e trace.Event, stackIDs []uint32) bool {
 }
 
 // printEvent prints a single event to w.
-func printEvent(w io.Writer, e trace.Event) {
+func printEvent(w io.Writer, t trace.Trace, e trace.Event) {
 	io.WriteString(w, e.String())
+	switch e.Type {
+	case trace.EvUserTaskCreate:
+		io.WriteString(w, " category=")
+		io.WriteString(w, t.Strings[e.Args[2]])
+
+	case trace.EvUserLog:
+		io.WriteString(w, " category=")
+		io.WriteString(w, t.Strings[e.Args[1]])
+		io.WriteString(w, " message=")
+		io.WriteString(w, t.Strings[e.Args[3]])
+	}
 }
 
 // printEvent prints a single event to w.

@@ -15,11 +15,13 @@ import (
 )
 
 func TestEvents(t *testing.T) {
-	inTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", "trace.bin"))
+	exampleTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.19", "trace.bin"))
+	require.NoError(t, err)
+	taskTrace, err := os.ReadFile(filepath.Join("..", "..", "testdata", "1.21", "task.trace"))
 	require.NoError(t, err)
 
 	t.Run("Default Filter", func(t *testing.T) {
-		out := events(t, inTrace, DefaultEventFilter())
+		out := events(t, exampleTrace, DefaultEventFilter())
 		assert.True(t, containsTextEvent(out, 0, trace.EvGoCreate))
 		assert.True(t, containsTextEvent(out, 159632, trace.EvProcStart))
 		assert.True(t, containsTextEvent(out, 1001309920, trace.EvGoSched))
@@ -32,7 +34,7 @@ func TestEvents(t *testing.T) {
 		f := DefaultEventFilter()
 		f.MinTs = 159632
 		f.MaxTs = 159632
-		out := events(t, inTrace, f)
+		out := events(t, exampleTrace, f)
 		assert.False(t, containsTextEvent(out, 0, trace.EvGoCreate))
 		assert.True(t, containsTextEvent(out, 159632, trace.EvProcStart))
 		assert.False(t, containsTextEvent(out, 1001309920, trace.EvGoSched))
@@ -41,7 +43,7 @@ func TestEvents(t *testing.T) {
 	t.Run("P Filter", func(t *testing.T) {
 		f := DefaultEventFilter()
 		f.P = 9
-		out := events(t, inTrace, f)
+		out := events(t, exampleTrace, f)
 		assert.False(t, containsTextEvent(out, 0, trace.EvGoCreate))
 		assert.False(t, containsTextEvent(out, 159632, trace.EvProcStart))
 		assert.True(t, containsTextEvent(out, 1001123792, trace.EvGoStart))
@@ -51,7 +53,7 @@ func TestEvents(t *testing.T) {
 	t.Run("G Filter", func(t *testing.T) {
 		f := DefaultEventFilter()
 		f.G = 1
-		out := events(t, inTrace, f)
+		out := events(t, exampleTrace, f)
 		assert.True(t, containsTextEvent(out, 0, trace.EvGoCreate))
 		assert.False(t, containsTextEvent(out, 159632, trace.EvProcStart))
 		assert.True(t, containsTextEvent(out, 1001121216, trace.EvGoUnblock))
@@ -62,7 +64,7 @@ func TestEvents(t *testing.T) {
 	t.Run("Stack Filter", func(t *testing.T) {
 		f := DefaultEventFilter()
 		f.StackIDs = []uint32{8, 11}
-		out := events(t, inTrace, f)
+		out := events(t, exampleTrace, f)
 
 		assert.False(t, containsTextEvent(out, 0, trace.EvGoCreate))
 		assert.True(t, containsTextEvent(out, 21920, trace.EvGoCreate)) // stk=9 stack=8
@@ -70,12 +72,21 @@ func TestEvents(t *testing.T) {
 		assert.False(t, containsTextEvent(out, 29536, trace.EvGoCreate))
 	})
 
-	t.Run("Verbose", func(t *testing.T) {
+	t.Run("Verbose Stacks", func(t *testing.T) {
 		f := DefaultEventFilter()
 		f.Verbose = true
-		out := events(t, inTrace, f)
-		require.True(t, strings.Contains(out, "stack 8:"))
-		require.True(t, strings.Contains(out, "runtime/trace.Start.func1()"))
+		out := events(t, exampleTrace, f)
+		assert.True(t, strings.Contains(out, "stack 8:"))
+		assert.True(t, strings.Contains(out, "runtime/trace.Start.func1()"))
+	})
+
+	t.Run("Verbose Task Logs", func(t *testing.T) {
+		f := DefaultEventFilter()
+		f.Verbose = true
+		out := events(t, taskTrace, f)
+		assert.True(t, strings.Contains(out, "taskCategory"))
+		assert.True(t, strings.Contains(out, "logCategory"))
+		assert.True(t, strings.Contains(out, "logMessage"))
 	})
 }
 
