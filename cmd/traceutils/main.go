@@ -5,13 +5,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"runtime/pprof"
+	runtimepprof "runtime/pprof"
 	"runtime/trace"
 	"strconv"
 	"strings"
 
 	gt "honnef.co/go/gotraceui/trace"
 
+	"github.com/felixge/traceutils/pkg/pprof"
 	"github.com/felixge/traceutils/pkg/print"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
@@ -31,6 +32,9 @@ func realMain() error {
 		traceF      = rootFlagSet.String("trace", "", "write trace to file")
 
 		breakdownFlagSet = flag.NewFlagSet("traceutils breakdown", flag.ExitOnError)
+
+		pprofFlagSet     = flag.NewFlagSet("traceutils pprof", flag.ExitOnError)
+		pprofWallFlagSet = flag.NewFlagSet("traceutils pprof wall", flag.ExitOnError)
 
 		printFlagSet       = flag.NewFlagSet("traceutils print", flag.ExitOnError)
 		printEventsFlagSet = flag.NewFlagSet("traceutils print events", flag.ExitOnError)
@@ -90,6 +94,28 @@ func realMain() error {
 		ShortUsage: "traceutils flamescope <input> <output>",
 		ShortHelp:  "Extract CPU samples from a trace and convert them to a format suitable for FlameScope.",
 		Exec:       func(_ context.Context, args []string) error { return FlameScopeCommand(args) },
+	}
+
+	pprofWall := &ffcli.Command{
+		Name:       "wall",
+		ShortUsage: "traceutils pprof wall <input>",
+		ShortHelp:  "Convert a trace to a pprof wall-clock profile.",
+		FlagSet:    pprofWallFlagSet,
+		Exec: func(_ context.Context, args []string) error {
+			return PPROF(args, pprof.Options{})
+		},
+	}
+
+	pprof := &ffcli.Command{
+		Name:        "pprof",
+		ShortUsage:  "traceutils pprof <subcommand>",
+		ShortHelp:   "Convert a trace to a pprof profile.",
+		FlagSet:     pprofFlagSet,
+		Subcommands: []*ffcli.Command{pprofWall},
+		Exec: func(_ context.Context, args []string) error {
+			pprofFlagSet.Usage()
+			return nil
+		},
 	}
 
 	printEvents := &ffcli.Command{
@@ -178,7 +204,7 @@ func realMain() error {
 	root := &ffcli.Command{
 		ShortUsage:  "traceutils [flags] <subcommand>",
 		FlagSet:     rootFlagSet,
-		Subcommands: []*ffcli.Command{anonymize, breakdown, print, flamescope, strings, stw},
+		Subcommands: []*ffcli.Command{anonymize, breakdown, pprof, print, flamescope, strings, stw},
 		Exec: func(_ context.Context, _ []string) error {
 			rootFlagSet.Usage()
 			return nil
@@ -196,10 +222,10 @@ func realMain() error {
 		}
 		defer file.Close()
 
-		if err := pprof.StartCPUProfile(file); err != nil {
+		if err := runtimepprof.StartCPUProfile(file); err != nil {
 			return err
 		}
-		defer pprof.StopCPUProfile()
+		defer runtimepprof.StopCPUProfile()
 	}
 
 	if *traceF != "" {

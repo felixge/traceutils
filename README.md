@@ -6,7 +6,7 @@ This repository contains code for decoding and encoding runtime/trace files as w
 go install github.com/felixge/traceutils/cmd/traceutils@latest
 ```
 
-Commands: [anonymize](#anonymize), [breakdown](#breakdown), [flamescope](#flamescope), [print](#print), [strings](#strings), [stw](#stw)
+Commands: [anonymize](#anonymize), [breakdown](#breakdown), [flamescope](#flamescope), [pprof](#pprof), [print](#print), [strings](#strings), [stw](#stw)
 
 ## anonymize
 
@@ -102,6 +102,16 @@ See [FlameScope for Go](https://blog.felixge.de/flamescope-for-go/) blog post fo
 Example output:
 
 ![screenshot of a trace viewed in flamescope](./images/flamescope.png)
+
+## pprof
+
+### wall
+
+Converts a trace to a pprof wall clock profile.
+
+```
+traceutils pprof wall <input> <output>
+```
 
 ## print
 

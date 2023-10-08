@@ -6,6 +6,7 @@ toolchain go1.21.1
 
 require (
 	github.com/gkampitakis/go-snaps v0.4.2
+	github.com/google/pprof v0.0.0-20230926050212-f7f687d19a98
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/stretchr/testify v1.8.1
