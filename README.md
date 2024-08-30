@@ -22,6 +22,8 @@ Example output:
 
 ## breakdown
 
+**DEPRECATED**: As of go1.23, the `go tool trace` command has a built-in breakdown command that you should use instead: `go tool trace -d=footprint <trace>`.
+
 The breakdown command can be used to analyze the contents of a trace.
 
 ### bytes
