@@ -1,8 +1,6 @@
 module github.com/felixge/traceutils
 
-go 1.21
-
-toolchain go1.21.1
+go 1.24.9
 
 require (
 	github.com/gkampitakis/go-snaps v0.4.2
@@ -10,7 +8,8 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/tools v0.5.0
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
+	golang.org/x/tools v0.38.0
 	honnef.co/go/gotraceui v0.3.0
 )
 
@@ -27,7 +26,7 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
